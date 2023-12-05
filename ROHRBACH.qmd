@@ -47,5 +47,59 @@ The dataset contains `r nrow(data)` star systems and `r ncol(data)` variables. T
 
 Regarding the numerical variables: `r if (all_numeric(data_types)) "All numerical variables are correctly recognized as numerical." else "Some numerical variables are not recognized as numerical."`
 
+#Q4
+```{r}
+# Assuming 'data' is your dataframe
 
+# Number of observations
+num_observations <- nrow(data)
+
+# Number of variables
+num_variables <- ncol(data)
+
+# Number of missing values for each variable
+num_missing_per_variable <- sapply(data, function(x) sum(is.na(x)))
+
+# Number of observations with at least one missing value
+num_obs_with_missing <- sum(apply(data, 1, function(x) any(is.na(x))))
+
+# Create a summary dataframe with matching column names
+summary_df <- data.frame(
+  Variable = c("Number of Observations", "Number of Variables", "Observations with At Least One Missing Value"),
+  MissingValues = c(num_observations, num_variables, num_obs_with_missing)
+)
+
+# Creating missing values per variable dataframe
+missing_values_df <- data.frame(
+  Variable = names(num_missing_per_variable),
+  MissingValues = num_missing_per_variable
+)
+missing_values_df <- missing_values_df[missing_values_df$MissingValues > 0, ]
+
+# Combine the summary with missing values per variable
+final_table <- rbind(summary_df, missing_values_df)
+```
+
+```{r}
+knitr::kable(final_table, caption = "Dataset Summary", format = "markdown")
+```
+
+#Q5
+```{r}
+data$luminosity <- as.numeric(data$luminosity)
+data$`relative radius` <- as.numeric(data$`relative radius`)
+
+# Remove observations with missing values in luminosity or radius
+data_clean <- data %>%
+  filter(!is.na(luminosity) & !is.na(`relative radius`))
+
+# Plotting luminosity as a function of radius
+ggplot(data_clean, aes(x = `relative radius`, y = luminosity)) +
+  geom_point() +
+  labs(title = "Luminosity vs. Relative Radius",
+       x = "Relative Radius",
+       y = "Luminosity") +
+  theme_minimal()
+
+```
 
