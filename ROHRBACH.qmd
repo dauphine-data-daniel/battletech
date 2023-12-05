@@ -220,6 +220,53 @@ if (length(inactive_control_factions) == 0) {
 } else {
   print(paste("Inactive factions controlling star systems in 2767:", paste(inactive_control_factions, collapse = ", ")))
 }
+```
+
+## Q15
+Loaded already previously
+
+## Q16
+```{r}
+data <- star_systems |>
+  mutate(
+    Harvard_Type = str_extract(`Type Of Star`, "^[A-Za-z]"),
+    Temperature_Magnitude = as.integer(str_extract(`Type Of Star`, "\\d")),
+    Yerkes_Class = str_extract(`Type Of Star`, "[IV]+|[D]+")
+  )
 
 ```
+I think I did this by using the code!
+
+## Q17
+```{r}
+ggplot(data, aes(x = Harvard_Type)) +
+  geom_bar() +
+  labs(title = "Distribution of Stars by Temperature Class", x = "Temperature Class (Harvard Type)", y = "Number of Stars") +
+  theme_minimal()
+
+```
+
+## Q18
+```{r}
+ggplot(data, aes(x = Harvard_Type, fill = as.factor(Temperature_Magnitude))) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution of Stars by Temperature Class and Magnitude",
+       x = "Temperature Class (Harvard Type)", 
+       y = "Number of Stars", 
+       fill = "Temperature Magnitude") +
+  theme_minimal()
+```
+
+## Q20
+```{r}
+ggplot(data, aes(x = Harvard_Type, y = `star temperature`)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Temperature for Each Class of Stars",
+       x = "Star Class",
+       y = "Temperature (K)") +
+  theme_minimal()
+
+```
+
+
 
