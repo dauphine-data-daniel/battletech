@@ -1,5 +1,5 @@
 ---
-title: "ROHRBACH"
+title: "Star Systems Data Analysis"
 author: Daniel Rohrbach
 format: html
 editor: visual
@@ -9,7 +9,8 @@ warning: false
 ---
 
 ```{r}
-here::i_am("final-project-sdg8.Rproj")
+#| message: false
+here::i_am("battletech.Rproj")
 library(here)
 library(ggplot2)
 library(dplyr)
@@ -19,5 +20,32 @@ library(stringr)
 ```
 
 [Link to the Github](https://github.com/dauphine-data-daniel/battletech)
+
+```{r}
+data <- vroom(here("data", "List+sytems.csv"), na = c("N/A", "NA", "?"), locale = locale(decimal_mark = ",", grouping_mark = "."))
+```
+
+## Q3
+
+```{r}
+expected_star_systems <- 1085
+expected_variables <- 8
+
+actual_star_systems <- nrow(data)
+actual_variables <- ncol(data)
+
+numerical_vars <- c("distance", "star temperature", "relative radius", "MASS", "luminosity")
+data_types <- sapply(data[numerical_vars], class)
+
+all_numeric <- function(x) {
+  all(sapply(x, function(v) v %in% c("numeric", "integer")))
+}
+```
+The dataset contains `r nrow(data)` star systems and `r ncol(data)` variables. The expected number of star systems is `r expected_star_systems` and the expected number of variables is `r expected_variables`.
+
+`r if (actual_star_systems == expected_star_systems && actual_variables == expected_variables) "The actual counts match the expected counts." else "The actual counts do not match the expected counts."`
+
+Regarding the numerical variables: `r if (all_numeric(data_types)) "All numerical variables are correctly recognized as numerical." else "Some numerical variables are not recognized as numerical."`
+
 
 
