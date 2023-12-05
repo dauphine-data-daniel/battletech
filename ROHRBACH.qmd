@@ -22,7 +22,7 @@ library(stringr)
 [Link to the Github](https://github.com/dauphine-data-daniel/battletech)
 
 ```{r}
-data <- vroom(here("data", "List+sytems.csv"), na = c("N/A", "NA", "?"), locale = locale(decimal_mark = ",", grouping_mark = "."))
+star_systems <- vroom(here("data", "List+sytems.csv"), na = c("N/A", "NA", "?"), locale = locale(decimal_mark = ",", grouping_mark = "."))
 ```
 
 ## Q3
@@ -31,34 +31,36 @@ data <- vroom(here("data", "List+sytems.csv"), na = c("N/A", "NA", "?"), locale 
 expected_star_systems <- 1085
 expected_variables <- 8
 
-actual_star_systems <- nrow(data)
-actual_variables <- ncol(data)
+actual_star_systems <- nrow(star_systems)
+actual_variables <- ncol(star_systems)
 
 numerical_vars <- c("distance", "star temperature", "relative radius", "MASS", "luminosity")
-data_types <- sapply(data[numerical_vars], class)
+data_types <- sapply(star_systems[numerical_vars], class)
 
 all_numeric <- function(x) {
   all(sapply(x, function(v) v %in% c("numeric", "integer")))
 }
 
-colnames(data)[colnames(data) == "MASS"] <- "mass"
+colnames(star_systems)[colnames(star_systems) == "MASS"] <- "mass"
 
 ```
-The dataset contains `r nrow(data)` star systems and `r ncol(data)` variables. The expected number of star systems is `r expected_star_systems` and the expected number of variables is `r expected_variables`.
+The dataset contains `r nrow(star_systems)` star systems and `r ncol(star_systems)` variables. The expected number of star systems is `r expected_star_systems` and the expected number of variables is `r expected_variables`.
 
 `r if (actual_star_systems == expected_star_systems && actual_variables == expected_variables) "The actual counts match the expected counts." else "The actual counts do not match the expected counts."`
 
 Regarding the numerical variables: `r if (all_numeric(data_types)) "All numerical variables are correctly recognized as numerical." else "Some numerical variables are not recognized as numerical."`
 
-#Q4
+
+## Q4
+
 ```{r}
-num_observations <- nrow(data)
+num_observations <- nrow(star_systems)
 
-num_variables <- ncol(data)
+num_variables <- ncol(star_systems)
 
-num_missing_per_variable <- sapply(data, function(x) sum(is.na(x)))
+num_missing_per_variable <- sapply(star_systems, function(x) sum(is.na(x)))
 
-num_obs_with_missing <- sum(apply(data, 1, function(x) any(is.na(x))))
+num_obs_with_missing <- sum(apply(star_systems, 1, function(x) any(is.na(x))))
 
 summary_df <- data.frame(
   Variable = c("Number of Observations", "Number of Variables", "Observations with At Least One Missing Value"),
@@ -78,12 +80,12 @@ final_table <- rbind(summary_df, missing_values_df)
 knitr::kable(final_table, caption = "Dataset Summary", format = "markdown")
 ```
 
-#Q5
+## Q5
 ```{r}
-data$luminosity <- as.numeric(data$luminosity)
-data$`relative radius` <- as.numeric(data$`relative radius`)
+star_systems$luminosity <- as.numeric(star_systems$luminosity)
+star_systems$`relative radius` <- as.numeric(star_systems$`relative radius`)
 
-data_clean <- data %>%
+data_clean <- star_systems |>
   filter(!is.na(luminosity) & !is.na(`relative radius`))
 
 ggplot(data_clean, aes(x = `relative radius`, y = luminosity)) +
@@ -94,13 +96,13 @@ ggplot(data_clean, aes(x = `relative radius`, y = luminosity)) +
   theme_minimal()
 
 ```
-#Q6
+## Q6
 ```{r}
 numerical_vars <- c("distance", "star temperature", "relative radius", "mass", "luminosity")
 
 find_extremes <- function(var) {
-  max_row <- data[which.max(data[[var]]), ]
-  min_row <- data[which.min(data[[var]]), ]
+  max_row <- star_systems[which.max(star_systems[[var]]), ]
+  min_row <- star_systems[which.min(star_systems[[var]]), ]
   data.frame(
     Variable = var,
     "Max Star" = max_row$Star,
@@ -118,6 +120,106 @@ extreme_values_df <- do.call(rbind, extreme_values)
 
 ```{r}
 knitr::kable(extreme_values_df, caption = "Most Extreme Stars for Each Numerical Variable", format = "markdown")
+
+```
+
+## Q7
+Files were pushed already earlier in order to successfully control for some troubleshooting.
+
+## Q8
+```{r}
+factions <- vroom(here("data", "allbtfactions.csv"), na = c("N/A", "NA", "?"))
+
+system_control <- vroom(here("data", "Faction-system.csv"), na = c("N/A", "NA", "?"))
+```
+Loading Data Sets
+
+## Q9
+```{r}
+special_factions <- c("A", "I", "U")
+special_counts <- sapply(special_factions, function(faction) {
+  sum(system_control$fidx == faction)
+})
+
+special_summary <- data.frame(
+  Faction = c("Abandoned", "Independent", "Undiscovered"),
+  Count = special_counts
+)
+```
+
+
+```{r}
+knitr::kable(special_summary, caption = "Number of Abandoned, Independent, and Undiscovered Star Systems in 2767", format = "markdown")
+```
+
+## Q10
+```{r}
+star_systems$Star_key <- as.character(star_systems$Star_key)
+system_control$Star_key <- as.character(system_control$Star_key)
+
+missing_systems <- setdiff(star_systems$Star_key, system_control$Star_key)
+
+num_missing_systems <- length(missing_systems)
+
+```
+The number of star systems that cannot be found in the `Faction-system.csv` file is `r num_missing_systems`.
+
+## Q11
+```{r}
+system_control_full <- system_control |>
+  left_join(factions, by = "fidx") |>
+  filter(!`Faction Name` %in% c("A", "I", "U"))
+
+faction_counts <- system_control_full |>
+  group_by(`Faction Name`) |>
+  summarise(Count = n())
+
+ggplot(faction_counts, aes(x = `Faction Name`, y = Count)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Number of Star Systems Controlled by Each Faction", x = "Faction Name", y = "Number of Systems")
+
+
+```
+## Q12
+```{r}
+star_systems_full <- star_systems |>
+  left_join(system_control_full, by = "Star_key") |>
+  filter(!`Faction Name` %in% c("A", "I", "U"))
+
+ggplot(star_systems_full, aes(x = `Faction Name`, y = distance)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Distance to the Sun of Star Systems by Faction", x = "Faction Name", y = "Distance to the Sun")
+
+```
+## Q13
+```{r}
+largest_stars <- star_systems_full |>
+  group_by(`Faction Name`) |>
+  filter(mass == max(mass, na.rm = TRUE)) |>
+  select(`Faction Name`, Star, mass)
+```
+
+
+```{r}
+knitr::kable(largest_stars, caption = "Largest Star Controlled by Each Faction", format = "markdown")
+```
+
+## Q14
+```{r}
+active_factions_2767 <- factions |>
+  filter(`Initial Year` <= 2767, is.na(`final year`) | `final year` >= 2767)
+
+
+inactive_control_factions <- setdiff(system_control_full$`Faction Name`, active_factions_2767$`Faction Name`)
+
+
+if (length(inactive_control_factions) == 0) {
+  print("All factions controlling star systems in 2767 are active during this year.")
+} else {
+  print(paste("Inactive factions controlling star systems in 2767:", paste(inactive_control_factions, collapse = ", ")))
+}
 
 ```
 
